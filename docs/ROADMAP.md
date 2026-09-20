@@ -69,6 +69,21 @@ Files: `blackboard.hpp`, `node.cpp`, `leaves.cpp`, `CompositeNode::setBlackboard
 
 Tests: `M1*`
 
+Where to work — each of these is a stub that ends in a `SAPLING_TODO(...)` line; implement them in
+this order (later ones build on earlier ones):
+
+1. `sapling_core/include/sapling/blackboard.hpp:27` — `Blackboard::set`
+2. `sapling_core/include/sapling/blackboard.hpp:35` — `Blackboard::get`
+3. `sapling_core/include/sapling/blackboard.hpp:40` — `Blackboard::has`
+4. `sapling_core/include/sapling/blackboard.hpp:44` — `Blackboard::erase`
+5. `sapling_core/src/node.cpp:11` — `Node::tick`
+6. `sapling_core/src/node.cpp:16` — `Node::halt`
+7. `sapling_core/src/node.cpp:21` — `Node::setBlackboard`
+8. `sapling_core/src/leaves.cpp:11` — `Condition::onTick`
+9. `sapling_core/src/leaves.cpp:18` — `Action::onTick`
+10. `sapling_core/src/composite.cpp:16` — `CompositeNode::setBlackboard` (needs to set its *own*
+    blackboard the way `Node::setBlackboard` does, then forward it to every child too)
+
 Concepts you'll need:
 
 - **The template-method pattern.** `Node::tick()` is a normal public function that every node
@@ -104,6 +119,15 @@ Files: `composite.cpp` (`haltChildren`, `Sequence`, `Fallback`)
 
 Tests: `M2*`
 
+Where to work, in order:
+
+1. `sapling_core/src/composite.cpp:26` — `CompositeNode::haltChildren` (halt every child from index
+   `from` onward — `Sequence`/`Fallback` below both call this)
+2. `sapling_core/src/composite.cpp:35` — `Sequence::onTick`
+3. `sapling_core/src/composite.cpp:40` — `Sequence::onHalt`
+4. `sapling_core/src/composite.cpp:49` — `Fallback::onTick`
+5. `sapling_core/src/composite.cpp:54` — `Fallback::onHalt`
+
 Both of these need to handle a child that returns `Running` — i.e., a child that needs more than one
 tick to finish (like a robot still driving somewhere). When that happens, the Sequence/Fallback
 itself returns `Running` too, and remembers *which* child was running so that on the *next* tick it
@@ -127,7 +151,19 @@ Files: `decorators.cpp`
 
 Tests: `M3*`
 
-The four you're implementing:
+Where to work, in order:
+
+1. `sapling_core/src/decorators.cpp:17` — `DecoratorNode::setBlackboard` (same idea as
+   `CompositeNode::setBlackboard` from M1, but forwarding to a single `child_` instead of a vector)
+2. `sapling_core/src/decorators.cpp:27` — `DecoratorNode::onHalt` (halt `child_`)
+3. `sapling_core/src/decorators.cpp:37` — `Inverter::onTick`
+4. `sapling_core/src/decorators.cpp:47` — `ForceSuccess::onTick`
+5. `sapling_core/src/decorators.cpp:57` — `Retry::onTick`
+6. `sapling_core/src/decorators.cpp:62` — `Retry::onHalt` (reset `attempts_` to 0, then halt the child)
+7. `sapling_core/src/decorators.cpp:72` — `Repeat::onTick`
+8. `sapling_core/src/decorators.cpp:77` — `Repeat::onHalt` (reset `count_` to 0, then halt the child)
+
+The four node types you're implementing:
 - `Inverter` — flips Success into Failure and vice versa (like a logical NOT). `Running` passes
   through unchanged, because there's nothing to invert yet.
 - `ForceSuccess` — turns Failure into Success too (useful for "try this, but don't let it block the
@@ -151,6 +187,13 @@ remembering it, plus a node that runs several children at once.
 Files: `composite.cpp` (`ReactiveSequence`, `ReactiveFallback`, `Parallel`)
 
 Tests: `M4*`
+
+Where to work, in order:
+
+1. `sapling_core/src/composite.cpp:63` — `ReactiveSequence::onTick`
+2. `sapling_core/src/composite.cpp:72` — `ReactiveFallback::onTick`
+3. `sapling_core/src/composite.cpp:82` — `Parallel::onTick`
+4. `sapling_core/src/composite.cpp:87` — `Parallel::onHalt`
 
 This is the most important milestone conceptually, so slow down here even if the code ends up short.
 Reactivity is the reason robots use BTs instead of, say, a simple script. Recall from M2 that
@@ -181,6 +224,17 @@ Files: `tree.cpp`, `childNodes()` in `composite.cpp` and `decorators.cpp`
 
 Tests: `M5*` (and now **everything** should be green: `ctest --test-dir build`)
 
+Where to work, in order:
+
+1. `sapling_core/src/composite.cpp:21` — `CompositeNode::childNodes`
+2. `sapling_core/src/decorators.cpp:22` — `DecoratorNode::childNodes`
+3. `sapling_core/src/tree.cpp:10` — the `Tree` constructor (no `SAPLING_TODO`, just a comment: give
+   the blackboard to the root by calling `root_->setBlackboard(blackboard_)`)
+4. `sapling_core/src/tree.cpp:17` — `Tree::tickOnce`
+5. `sapling_core/src/tree.cpp:22` — `Tree::tickWhileRunning`
+6. `sapling_core/src/tree.cpp:27` — `Tree::halt`
+7. `sapling_core/src/tree.cpp:33` — `Tree::toString`
+
 Up to now you've been ticking individual nodes directly in tests. `Tree` is the thing a real program
 actually uses: it wires the blackboard into the root once, and `tickWhileRunning()` repeatedly ticks
 the root until it returns `Success` or `Failure` (instead of `Running`) — simulating what a robot's
@@ -205,6 +259,15 @@ velocity commands, so that the tree logic in `behaviors.cpp` never has to know R
 separation is deliberate: it's why `MoveTo` and `Recharge` can be unit-tested (see the experiments
 below) without a simulator running at all.
 
+Where to work:
+
+1. `sapling_turtle/src/behaviors.cpp:42` — `Recharge::onTick`
+2. `sapling_turtle/src/behaviors.cpp:27` — `MoveTo::onTick`
+3. `sapling_turtle/src/behaviors.cpp:32` — `MoveTo::onHalt`
+4. `sapling_turtle/src/behaviors.cpp:49` — `buildPatrolTree`
+
+In more detail:
+
 1. Implement `Recharge` first (it's the simpler of the two: each tick, add `per_tick` to the
    `"battery"` blackboard value; return `Running` until it reaches 100, then `Success`). Then
    implement `MoveTo`: a **proportional controller**, meaning the further the turtle is from the goal
@@ -228,7 +291,7 @@ Experiments (small, but worth doing — they build intuition no amount of readin
   turn the right way, does it stop at the right distance — with a plain GoogleTest binary and no
   simulator, in milliseconds instead of minutes.
 
-## M7: Stretch goals (pick any, each is a good CV talking point)
+## M7: Stretch goals (pick any)
 
 These are optional and unordered — pick whichever sounds most interesting. Each is a self-contained
 extension to the engine you've already built, not a new milestone you're expected to fully finish.
