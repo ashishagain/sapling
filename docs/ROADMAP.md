@@ -1,5 +1,77 @@
 # Roadmap
 
+## What you're building
+
+**A small C++ library that lets a robot make decisions, plus a demo robot that uses it.**
+
+A robot program constantly has to decide what to do next: "if the battery is low, go charge;
+otherwise keep patrolling." A *behavior tree* is a tidy way to write those decisions as a tree of
+small pieces instead of a tangle of `if`/`else`. You are writing the engine that runs such trees.
+Real robotics software (Nav2, MoveIt 2) uses the same idea, so you'll be building a mini version of
+something used in industry.
+
+There are three pieces, and the milestones build them in this order:
+
+| Piece | What it is | Milestones |
+|---|---|---|
+| **The engine** (`sapling_core/`) | The library: nodes, the shared notepad (blackboard), Sequence/Fallback/etc., and a `Tree` that runs them. Plain C++, no robot needed. | M1–M4 |
+| **The example** (`enter_room.cpp`) | A tiny program that builds a tree with your engine and runs it in the terminal. This is your first proof it works. | M5 |
+| **The robot demo** (`sapling_turtle/`) | A simulated turtle (ROS 2 turtlesim) that drives between waypoints, and when its battery runs low, stops, drives to a charger, recharges, and resumes. | M6 |
+
+### What "done" looks like
+
+**After M5**, this program (`./build/enter_room_example`) uses your engine to get a robot through a
+locked door: check if the door is open, else try the handle, else pick the lock (retrying up to 5
+times), then walk in. It prints something like:
+
+```
+Tree:
+Root
+  GetDoorOpen
+    IsDoorOpen
+    OpenDoor
+    UnlockThenOpen
+      Retry(5)
+        PickLock
+      OpenDoor
+  EnterRoom
+
+Running:
+  OpenDoor: it's locked
+  PickLock: attempt 1 failed
+  PickLock: attempt 2 failed
+  PickLock: click!
+  OpenDoor: opened
+  EnterRoom: I'm in!
+
+Result: Success
+```
+
+The top half is the tree drawn as text (children indented under their parent); the bottom half is
+the robot's decisions, in order. Every line there comes from a function you wrote.
+
+**After M6**, you launch turtlesim and watch the turtle loop around four waypoints. Its battery
+drains as it moves. When it drops below 25%, the turtle abandons its patrol mid-drive, goes to the
+charger, recharges, and starts patrolling again. The tree behind it:
+
+```
+Root (ReactiveSequence)          <- re-checks the battery on EVERY tick
+├── EnsureBattery (Fallback)     <- "battery OK? if not, go recharge"
+│   ├── BatteryOk
+│   └── GoRecharge (Sequence)
+│       ├── MoveTo charger
+│       └── Recharge
+└── Patrol (Sequence)            <- visit the waypoints in order
+    ├── MoveTo wp0
+    ├── MoveTo wp1
+    ├── MoveTo wp2
+    └── MoveTo wp3
+```
+
+You'll end up with a working library, a passing test suite, and a GIF of the turtle for your README.
+
+## How to work through it
+
 Work through the milestones in order. Each one has a test suite. Your job is to make it pass.
 
 Every unimplemented function throws `Not implemented yet: <Function>`, so running the tests for a
