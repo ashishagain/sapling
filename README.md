@@ -2,7 +2,7 @@
 
 **A behavior tree engine written from scratch in modern C++17, integrated with ROS 2.**
 
-![CI](https://github.com/YOUR_USERNAME/sapling/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/ashishagain/sapling/actions/workflows/ci.yml/badge.svg)
 
 sapling implements the core of a behavior tree (BT) runtime (tick semantics, halting, a typed
 blackboard, and the standard control-flow and decorator nodes) without depending on
