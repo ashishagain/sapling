@@ -8,6 +8,10 @@ namespace sapling {
 
 // Milestone 5.
 // Owns the root node and the blackboard, and drives the tick loop.
+//
+// In plain words: the piece a real program uses. Build your nodes, hand the root (and a
+// blackboard) to a Tree, then call tickOnce() every cycle (the turtle does this ~10
+// times a second) or tickWhileRunning() to run to completion (the enter_room example).
 class Tree {
  public:
   // Attach `bb` to every node of the tree (via root->setBlackboard).

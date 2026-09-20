@@ -8,6 +8,11 @@ namespace sapling {
 // Milestone 1.
 // Leaves are where the tree touches the real world.
 //
+// In plain words: every other node just decides which leaf runs next. The leaves are
+// the ones that ask a question ("is the door open?", Condition) or do something ("open
+// the door", Action). Both take a lambda from the user, so you can build leaves without
+// writing a new class each time; look at how enter_room.cpp does it.
+//
 // For quick experiments you can wrap a lambda in Action / Condition.
 // For real robot behaviours that take time and need clean-up on halt
 // (like "drive to a waypoint"), subclass Node directly and implement

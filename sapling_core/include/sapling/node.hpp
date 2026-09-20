@@ -12,7 +12,14 @@ class Node;
 using NodePtr = std::shared_ptr<Node>;
 
 // Milestone 1.
-// Base class of everything in the tree. It uses the "template method" pattern:
+// Base class of everything in the tree. Every leaf, composite and decorator is a Node.
+//
+// In plain words: a node is one box in the tree. It can be ticked ("do your thing
+// once and tell me how it went": Running / Success / Failure), halted ("stop, you have
+// been interrupted"), and it can read and write the shared Blackboard. The tree's
+// shape comes from nodes holding other nodes (composites and decorators).
+//
+// It uses the "template method" pattern:
 // the public tick()/halt() handle bookkeeping that is identical for every node,
 // and call the protected virtual onTick()/onHalt() that subclasses implement.
 class Node {

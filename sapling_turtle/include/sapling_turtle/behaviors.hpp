@@ -44,6 +44,8 @@ struct PatrolConfig {
 };
 
 // Drive to (x, y) with a simple proportional controller.
+// ("Proportional" = the further off you are, the harder you correct: turn faster when
+// pointing far from the goal, drive faster when far away.)
 //  - No "pose" on the blackboard yet -> Running (wait for the first message).
 //  - Within `tolerance` of the goal  -> stop the turtle, Success.
 //  - Otherwise                       -> send a velocity command, Running.
@@ -63,7 +65,7 @@ class MoveTo : public sapling::Node {
   double tolerance_;
 };
 
-// Add `per_tick` to "battery" every tick. Running until it reaches 100,
+// The "refuel" step. Add `per_tick` to "battery" every tick. Running until it reaches 100,
 // then Success.
 class Recharge : public sapling::Node {
  public:

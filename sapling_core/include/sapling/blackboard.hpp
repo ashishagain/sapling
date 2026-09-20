@@ -36,9 +36,19 @@ class Blackboard {
   // USED BY: actions publishing results, e.g. b.set<bool>("door_open", true).
   template <typename T>
   void set(const std::string& key, T value) {
-    // HINT: storage_ maps string -> std::any. Assigning a T into a std::any wraps it
-    // (std::any remembers the type). storage_[key] = ... replaces any old value,
-    // even one of a different type, so there is nothing else to handle. One line.
+    // TODO (M1): store `value` in the blackboard under the name `key`. Replace the SAPLING_TODO
+    //     line below with your code.
+    //
+    //     storage_ (at the bottom of this class) is the shelf of labelled boxes. It maps a name to
+    //     a std::any, a box that can hold a value of any type. `key` is the label and `value` is
+    //     what goes in the box.
+    //
+    //     Putting something on the shelf is one line, and you index the map with square brackets,
+    //     like a Python dictionary. If the label is already in use the old contents are simply
+    //     replaced, even if they were a different type, so there is nothing else to handle.
+    //
+    //         storage_[key] = value;
+    //
     SAPLING_TODO("Blackboard::set");
   }
 
@@ -49,25 +59,53 @@ class Blackboard {
   // not exist yet (the turtle's first pose message may not have arrived).
   template <typename T>
   std::optional<T> get(const std::string& key) const {
-    // HINT, three steps:
-    //  1. storage_.find(key). Not found? return std::nullopt. (Don't use operator[]:
-    //     it is non-const and would insert an empty entry.)
-    //  2. Found: it->second is the std::any. Use the POINTER form
-    //     std::any_cast<T>(&it->second): it returns T* or nullptr, never throws.
-    //  3. nullptr means the stored type was not T -> return std::nullopt.
-    //     Otherwise return the dereferenced value (copy it into the optional).
+    // TODO (M1): look up `key` and return its value, or an empty optional if there is none. Replace
+    //     the SAPLING_TODO line below with your code.
+    //
+    //     It can come up empty in two ways: the label isn't on the shelf at all, or it is, but the
+    //     box holds a different type from T (you asked for an int but someone stored a string). In
+    //     both cases return std::nullopt, which means 'no value'. That is why the return type is
+    //     std::optional<T> rather than plain T.
+    //
+    //     Step 1, is the label there? Ask the map to find it and compare the answer with end(),
+    //     which means 'not found':
+    //
+    //         auto it = storage_.find(key);
+    //         if (it == storage_.end()) return std::nullopt;
+    //
+    //     Step 2, what is in the box? `it->second` is the std::any. Ask it whether it really holds
+    //     a T. Use the pointer form of any_cast (note the &): it gives back a pointer to the T, or
+    //     nullptr if the box holds something else. The non-pointer form would throw an error
+    //     instead, which you don't want here:
+    //
+    //         const T* p = std::any_cast<T>(&it->second);
+    //
+    //     Step 3 is yours: if p is nullptr, return the 'no value' marker. Otherwise return the
+    //     value p points at (a * in front of p reads the value through the pointer).
+    //
     SAPLING_TODO("Blackboard::get");
   }
 
   // True if anything is stored under `key`.
   // USED BY: code that needs to know "has this been set yet?" without caring about the type.
   bool has(const std::string& key) const {
-    // HINT: is the key in storage_? (find() != end(), or count(), or contains() in C++20.)
+    // TODO (M1): return whether `key` is on the shelf. Replace the SAPLING_TODO line below with
+    //     your code.
+    //
+    //     You used find() and end() in get(). Same two here, but you only need a true/false answer.
+    //     (storage_.count(key) also works.)
+    //
     SAPLING_TODO("Blackboard::has");
   }
 
   void erase(const std::string& key) {
-    // HINT: unordered_map::erase(key) already does nothing if the key is missing.
+    // TODO (M1): remove `key` from the shelf. Replace the SAPLING_TODO line below with your code.
+    //
+    //     std::unordered_map has an erase() function that takes the key. It does nothing if the key
+    //     isn't there, so you don't need to check first.
+    //
+    //         storage_.erase(key);
+    //
     SAPLING_TODO("Blackboard::erase");
   }
 

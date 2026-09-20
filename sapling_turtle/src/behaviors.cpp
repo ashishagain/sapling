@@ -5,6 +5,9 @@
 
 namespace sapling_turtle {
 
+// Functions with a SAPLING_TODO line inside are yours to write. Everything else in this file is
+// written for you: read it if you're curious, but you don't need to change it.
+
 using sapling::Status;
 
 // Wrap an angle to [-pi, pi]. You'll need this for the heading error.
@@ -30,23 +33,31 @@ Status MoveTo::onTick() {
   //                (turn on the spot first, then drive)
   //    Clamp both to something sane (turtlesim is happy with ~2 m/s, ~4 rad/s).
   //
-  // HINTS:
-  //  * Blackboard access: blackboard()->get<Pose2D>("pose") returns a std::optional.
-  //    Empty = patrol_node has not received a pose yet: return Status::Running.
-  //  * dx = goal_.x - pose.x; dy = goal_.y - pose.y;
-  //    distance = std::hypot(dx, dy);
-  //    desired heading = std::atan2(dy, dx);
-  //    heading_error = wrapAngle(desired heading - pose.theta)  (helper above; without
-  //    wrapping, the turtle can spin the long way round).
-  //  * distance < tolerance_: io_.send_velocity(0, 0); return Success.
-  //  * Otherwise pick gains (start with k_ang = 4.0, k_lin = 1.5), then:
-  //      angular = std::clamp(k_ang * heading_error, -4.0, 4.0);
-  //      linear  = std::clamp(k_lin * distance, 0.0, 2.0);
-  //    and scale linear down to 0 while std::abs(heading_error) is large (say > 0.5
-  //    rad) so it turns on the spot first. Then io_.send_velocity(linear, angular);
-  //    return Running. (std::clamp needs #include <algorithm>.)
-  //  * Tune the gains by watching the turtle: overshooting/spiralling means the gains
-  //    are too high or the heading error is not wrapped.
+  // TODO (M6): make the turtle drive toward goal_ and report when it has arrived. Replace the
+  //     SAPLING_TODO line below with your code. The numbered plan above is the outline; this says
+  //     what each piece is.
+  //
+  //     The turtle's pose is published onto the blackboard under the key "pose" as a Pose2D (x, y,
+  //     and theta, the direction it faces, in radians). Read it with
+  //     blackboard()->get<Pose2D>("pose"). That gives a std::optional: if it is empty no pose has
+  //     arrived yet, so return Running and try again next tick.
+  //
+  //     The goal is goal_.x and goal_.y. Work out how far away it is (std::hypot of dx and dy,
+  //     which are goal minus turtle) and what direction it is in (std::atan2(dy, dx) gives an
+  //     angle). The heading error is that direction minus pose->theta. Pass it through wrapAngle(),
+  //     the helper at the top of this file, so a turn of 350 degrees becomes -10 and the turtle
+  //     takes the short way round.
+  //
+  //     If the distance is smaller than tolerance_ the turtle has arrived: stop it and return
+  //     Success. Otherwise steer with io_.send_velocity(linear, angular), your only way to drive
+  //     (linear is forward speed in m/s, angular is turning speed in rad/s). Make each one
+  //     proportional to how wrong things are: angular from the heading error, linear from the
+  //     distance. Gains of about 4.0 and 1.5 are a first guess. std::clamp(value, low, high), with
+  //     #include <algorithm>, keeps them in range (about +-4.0 and 0..2.0).
+  //
+  //     Decide what to do when the turtle points far away from the goal: driving forward while
+  //     turning makes a wide spiral. Then run it and tune the numbers by watching the turtle.
+  //
   SAPLING_TODO("MoveTo::onTick");
 }
 
@@ -55,8 +66,11 @@ void MoveTo::onHalt() {
   // WHY: called when the tree interrupts MoveTo (e.g. battery went low). The demo would
   // visibly break without it: the turtle keeps driving toward a waypoint it has been
   // told to abandon. See the "delete this body" experiment in the roadmap.
-  // HINT: one call: io_.send_velocity(0.0, 0.0). Without it the last velocity command
-  // keeps being applied and the turtle drives on after the tree has moved elsewhere.
+  // TODO (M6): make the turtle stop. Replace the SAPLING_TODO line below with your code.
+  //
+  //     io_.send_velocity(linear, angular) is how you drive. Send zero for both. Without this the
+  //     turtle keeps driving with the last command it was given.
+  //
   SAPLING_TODO("MoveTo::onHalt");
 }
 
@@ -70,14 +84,17 @@ Status Recharge::onTick() {
   // WHY: the "refuel" step of the demo. When the battery is low the tree drives to the
   // charger, then runs Recharge, which needs several ticks to fill the battery. While
   // it returns Running the tree stays here; when it returns Success the patrol resumes.
-  // HINT:
-  //  1. double battery = blackboard()->get<double>("battery").value_or(0.0);
-  //  2. battery = std::min(100.0, battery + per_tick_);
-  //  3. blackboard()->set<double>("battery", battery);
-  //  4. battery >= 100.0 -> Success, else Running. (std::min needs <algorithm>.)
-  // Optionally io_.send_velocity(0, 0) so the turtle sits still while charging, and
-  // io_.log(...) to announce it (io_.log may be empty in tests, so check it first).
-  // No onHalt() override is needed: recharging has nothing to clean up.
+  // TODO (M6): raise the battery a little each tick. Replace the SAPLING_TODO line below with your
+  //     code.
+  //
+  //     The battery level lives on the blackboard under the key "battery" as a double.
+  //     blackboard()->get<double>("battery") gives a std::optional, and .value_or(0.0) turns
+  //     'nothing there' into 0. blackboard()->set<double>("battery", x) writes it back.
+  //
+  //     per_tick_ is how much to add each tick. Don't let the level go above 100: std::min(a, b)
+  //     (with #include <algorithm>) picks the smaller of two numbers. Return Running while charging
+  //     and Success once it reaches 100.
+  //
   SAPLING_TODO("Recharge::onTick");
 }
 
@@ -89,22 +106,21 @@ sapling::NodePtr buildPatrolTree(const PatrolConfig& config, const TurtleIO& io)
   // Recharge), Sequence, Fallback and ReactiveSequence get assembled into the
   // patrol robot's brain. patrol_node.cpp calls this once at startup and then ticks the
   // result. It is the same job as enter_room.cpp's main(), for a real robot.
-  // HINT: build bottom-up with std::make_shared, like examples/enter_room.cpp:
-  //  1. battery_ok = make_shared<sapling::Condition>("BatteryOk", lambda) where the
-  //     lambda takes (sapling::Blackboard& bb) and returns
-  //     bb.get<double>("battery").value_or(0.0) > config.low_battery_threshold.
-  //  2. go_recharge = make_shared<sapling::Sequence>("GoRecharge"), with
-  //     ->addChild(MoveTo to config.charger).addChild(Recharge with
-  //     config.recharge_per_tick).
-  //  3. ensure_battery = make_shared<sapling::Fallback>("EnsureBattery"): children
-  //     battery_ok, then go_recharge.
-  //  4. patrol = make_shared<sapling::Sequence>("Patrol"): loop over
-  //     config.waypoints, adding one MoveTo per waypoint (name it e.g. "wp" +
-  //     std::to_string(i)). Pass `io` to every MoveTo/Recharge.
-  //  5. root = make_shared<sapling::ReactiveSequence>("Root"): children
-  //     ensure_battery, then patrol. Return root.
-  // addChild returns the node so calls chain; the NodePtr return type accepts a
-  // shared_ptr<ReactiveSequence> directly.
+  // TODO (M6): build the tree drawn in behaviors.hpp, from the bottom up, and return its root.
+  //     Replace the SAPLING_TODO line below with your code.
+  //
+  //     sapling_core/examples/enter_room.cpp builds a tree the same way (std::make_shared to create
+  //     each node, addChild to attach children). Follow the diagram in behaviors.hpp: BatteryOk is
+  //     a sapling::Condition, GoRecharge and Patrol are Sequences, EnsureBattery is a Fallback, and
+  //     Root is a ReactiveSequence.
+  //
+  //     Sources for the values: config.low_battery_threshold, config.charger,
+  //     config.recharge_per_tick and config.waypoints (one MoveTo per waypoint, so use a loop).
+  //     MoveTo and Recharge constructors are in behaviors.hpp, and each takes `io`.
+  //
+  //     Watch out: copy low_battery_threshold into the BatteryOk lambda's capture list. Don't
+  //     capture `config` itself: it is only a reference and may be gone by the time the tree runs.
+  //
   SAPLING_TODO("buildPatrolTree");
 }
 
